@@ -1,4 +1,8 @@
 <?php
+// Ativa erros para a gente ver o que tá acontecendo
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 // Carregar todos os arquivos
 require_once 'config/database.php';
 require_once 'models/usuarioModel.php';
@@ -11,7 +15,9 @@ require_once 'models/flashcardModel.php';
 require_once 'models/inteligenciasModel.php';
 require_once 'models/tarefasModel.php';
 require_once 'models/adminModel.php';
+require_once 'models/cornellModel.php';
 
+require_once 'controllers/cornellController.php';
 require_once 'controllers/authController.php';
 require_once 'controllers/usuarioController.php';
 require_once 'controllers/materiaController.php';
@@ -24,7 +30,8 @@ require_once 'controllers/tarefasController.php';
 require_once 'controllers/adminController.php';
 
 require_once 'middleware/AuthMiddleware.php';
-require_once 'routes/api.php';
+// O arquivo routes/api.php foi IGNORADO de propósito para não dar conflito
+// require_once 'routes/api.php';
 
 // Headers CORS
 header("Access-Control-Allow-Origin: *");
@@ -44,108 +51,129 @@ $method = $_SERVER['REQUEST_METHOD'];
 $request_uri = $_SERVER['REQUEST_URI'];
 
 // =======================================================
-// 👇 INTERCEPTADOR DE ROTAS DO DESKTOP (ADM) 👇
+// 👇 ROTAS DO DESKTOP (ADM) 👇
 // =======================================================
 
-// LOGIN
 if (strpos($request_uri, 'adm/login') !== false && $method == 'POST') {
     $adminController = new AdminController($db);
     $adminController->login();
     exit();
 }
 
-// CADASTRAR ADM
 if (strpos($request_uri, 'adm/cadastrar') !== false && $method == 'POST') {
     $adminController = new AdminController($db);
     $adminController->cadastrar();
     exit();
 }
 
-// BUSCAR ADM (Para editar perfil)
-if (strpos($request_uri, 'adm/buscar') !== false && $method == 'POST') {
-    $adminController = new AdminController($db);
-    $adminController->buscarAdm();
-    exit();
-}
-
-// EDITAR ADM
-if (strpos($request_uri, 'adm/editar') !== false && $method == 'POST') {
-    $adminController = new AdminController($db);
-    $adminController->editar();
-    exit();
-}
-
-// ESTATÍSTICAS (Gráfico)
 if (strpos($request_uri, 'adm/estatisticas') !== false && $method == 'GET') {
     $adminController = new AdminController($db);
     $adminController->estatisticas();
     exit();
 }
 
-// LISTAR USUÁRIOS
-if (strpos($request_uri, 'adm/usuarios') !== false && $method == 'GET') {
-    $adminController = new AdminController($db);
-    $adminController->listarUsuarios();
-    exit();
-}
-
-// ALTERAR STATUS DO USUÁRIO (Ativar/Desativar)
-if (strpos($request_uri, 'adm/status') !== false && $method == 'PUT') {
-    $adminController = new AdminController($db);
-    $partes = explode('/', parse_url($request_uri, PHP_URL_PATH));
-    $id = end($partes);
-    $dados = json_decode(file_get_contents("php://input"));
-    $adminController->alterarStatus($id, $dados);
-    exit();
-}
-
-// ROTAS DE DÚVIDAS
-// ROTAS DE DÚVIDAS
-if (strpos($request_uri, 'adm/duvidas') !== false) {
-    $adminController = new AdminController($db);
-    
-    if ($method == 'GET') {
-        $adminController->listarDuvidas();
-    } 
-    elseif ($method == 'PUT' && strpos($request_uri, 'responder') !== false) {
-        $dados = json_decode(file_get_contents("php://input"));
-        $partes = explode('/', parse_url($request_uri, PHP_URL_PATH));
-        $id = end($partes);
-        $adminController->responderDuvida($id, $dados->resposta);
-    } 
-    elseif ($method == 'PUT' && strpos($request_uri, 'reabrir') !== false) {
-        $partes = explode('/', parse_url($request_uri, PHP_URL_PATH));
-        $id = end($partes);
-        $adminController->reabrirDuvida($id);
-    } 
-    elseif ($method == 'PUT' && strpos($request_uri, 'excluir') !== false) {
-        $partes = explode('/', parse_url($request_uri, PHP_URL_PATH));
-        $id = end($partes);
-        $adminController->excluirDuvida($id);
-    }
-    exit();
-}
-
 // =======================================================
-// 👆 FIM DO INTERCEPTADOR 👆
+// 👇 ROTEADOR DO USUÁRIO (WEB REACT) 👇
 // =======================================================
 
-// Se não for rota do ADM, segue o fluxo normal do roteador para o site/app
+// Limpa a URL para pegar só o endpoint final (ex: "cadastro")
 $base_path = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
 if ($base_path === '/') { $base_path = ''; }
 $request_path = parse_url($request_uri, PHP_URL_PATH);
 if (!empty($base_path) && strpos($request_path, $base_path) === 0) {
     $request_path = substr($request_path, strlen($base_path));
 }
-$endpoint = str_replace('/api/', '', $request_path);
+$endpoint = trim(str_replace('/api/', '', $request_path), '/');
 
-try {
-    rotear($method, $endpoint, $db);
-} catch (Throwable $e) {
-    http_response_code(500);
-    echo json_encode([
-        "message" => "Erro interno no servidor",
-        "error" => $e->getMessage()
-    ]);
+// 1º: Rotas que NÃO precisam de Token (Login e Cadastro)
+if ($endpoint == 'login' && $method == 'POST') {
+    $authController = new AuthController($db);
+    $authController->login();
+    exit();
 }
+
+if ($endpoint == 'cadastro' && $method == 'POST') {
+    $authController = new AuthController($db);
+    $authController->register();
+    exit();
+}
+
+// 2º: A PARTIR DAQUI, TUDO EXIGE TOKEN (O AuthMiddleware vai barrar se não tiver)
+$id_usuario_logado = AuthMiddleware::validarToken($db);
+
+// Rota de Perfil
+if ($endpoint == 'perfil') {
+    $controller = new UsuarioController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->buscar($id_usuario_logado);
+    if ($method == 'PUT') $controller->atualizar();
+    exit();
+}
+
+// Rota de Tarefas
+if ($endpoint == 'tarefas') {
+    $controller = new TarefaController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->listar();
+    if ($method == 'POST') $controller->criar();
+    exit();
+}
+
+// Rota de Tarefas com ID (ex: tarefas/5)
+if (preg_match('/^tarefas\/(\d+)$/', $endpoint, $matches) && in_array($method, ['PUT', 'DELETE'])) {
+    $controller = new TarefaController($db, $id_usuario_logado);
+    if ($method == 'PUT') $controller->atualizar($matches[1]);
+    if ($method == 'DELETE') $controller->deletar($matches[1]);
+    exit();
+}
+
+// Rota de Matérias
+if ($endpoint == 'materias') {
+    $controller = new MateriaController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->listar();
+    if ($method == 'POST') $controller->criar();
+    exit();
+}
+
+
+if ($endpoint == 'cronogramas') {
+    $controller = new CronogramaController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->listar();
+    if ($method == 'POST') $controller->criar();
+    exit();
+}
+if (preg_match('/^cronogramas\/(\d+)$/', $endpoint, $matches) && in_array($method, ['PUT', 'DELETE'])) {
+    $controller = new CronogramaController($db, $id_usuario_logado);
+    if ($method == 'PUT') $controller->atualizar($matches[1]);
+    if ($method == 'DELETE') $controller->deletar($matches[1]);
+    exit();
+}
+
+// Rota de Anotações (Notas)
+if ($endpoint == 'blocos') {
+    $controller = new BlocoController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->listar();
+    if ($method == 'POST') $controller->criar();
+    exit();
+}
+if (preg_match('/^blocos\/(\d+)$/', $endpoint, $matches) && in_array($method, ['PUT', 'DELETE'])) {
+    $controller = new BlocoController($db, $id_usuario_logado);
+    if ($method == 'PUT') $controller->atualizar($matches[1]);
+    if ($method == 'DELETE') $controller->deletar($matches[1]);
+    exit();
+}
+// Rota de Cornell
+if ($endpoint == 'cornell') {
+    $controller = new CornellController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->listar();
+    if ($method == 'POST') $controller->criar();
+    exit();
+}
+if (preg_match('/^cornell\/(\d+)$/', $endpoint, $matches) && $method == 'DELETE') {
+    $controller = new CornellController($db, $id_usuario_logado);
+    $controller->deletar($matches[1]);
+    exit();
+}
+
+// Se não achou nenhuma rota, avisa
+http_response_code(404);
+echo json_encode(["message" => "Rota não encontrada na API", "endpoint_recebido" => $endpoint]);
 ?>

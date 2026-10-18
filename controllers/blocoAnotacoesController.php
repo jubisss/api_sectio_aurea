@@ -22,17 +22,19 @@ class BlocoController {
         return $this->id_usuario_logado;
     }
     
-    public function listar() {
-        $id_usuario = $this->getUserId();
-        $stmt = $this->bloco->read($id_usuario);
-        
-        $blocos = [];
-        while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            array_push($blocos, $row);
-        }
-        
-        echo json_encode($blocos);
+   public function listar() {
+    $id_usuario = $this->getUserId();
+    $stmt = $this->bloco->read($id_usuario);
+    
+    $blocos = [];
+    while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        array_push($blocos, $row);
     }
+    
+    echo json_encode($blocos);
+}
+
+
     
     public function buscar($id) {
         $id_usuario = $this->getUserId();
