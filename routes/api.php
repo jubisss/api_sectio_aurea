@@ -5,7 +5,6 @@ function rotear($method, $endpoint, $db) {
     $id = $parts[1] ?? null;
     $subresource = $parts[2] ?? null;
     
-    // Rotas públicas
     switch($resource) {
         case 'login':
             if($method == 'POST') {
@@ -19,6 +18,13 @@ function rotear($method, $endpoint, $db) {
             if($method == 'POST') {
                 $auth = new AuthController($db);
                 $auth->register();
+            }
+            return;
+            
+        case 'codigo-cadastro':
+            if($method == 'POST') {
+                $auth = new AuthController($db);
+                $auth->enviarCodigoCadastro();
             }
             return;
             
@@ -50,7 +56,6 @@ function rotear($method, $endpoint, $db) {
             return;
     }
     
-    // Rotas protegidas (precisam de token)
     $id_usuario_logado = AuthMiddleware::validarToken($db);
     
     switch($resource) {
@@ -251,6 +256,37 @@ function rotear($method, $endpoint, $db) {
                     if($id) $controller->deletar($id);
                     break;
             }
+            break;
+            
+        case 'mapasmentais':
+            $controller = new MapaMentalController($db, $id_usuario_logado);
+            if ($method == 'GET') {
+                if ($id) $controller->buscar($id);
+                else $controller->listar();
+            } elseif ($method == 'POST') $controller->criar();
+            elseif ($method == 'PUT' && $id) $controller->atualizar($id);
+            elseif ($method == 'DELETE' && $id) $controller->deletar($id);
+            break;
+
+        case 'diagramasfluxo':
+            $controller = new DiagramaFluxoController($db, $id_usuario_logado);
+            if ($method == 'GET') {
+                if ($id) $controller->buscar($id);
+                else $controller->listar();
+            } elseif ($method == 'POST') $controller->criar();
+            elseif ($method == 'PUT' && $id) $controller->atualizar($id);
+            elseif ($method == 'DELETE' && $id) $controller->deletar($id);
+            break;
+
+        case 'bibliotecavideos':
+        case 'videos':
+            $controller = new BibliotecaVideosController($db, $id_usuario_logado);
+            if ($method == 'GET') {
+                if ($id) $controller->buscar($id);
+                else $controller->listar();
+            } elseif ($method == 'POST') $controller->criar();
+            elseif ($method == 'PUT' && $id) $controller->atualizar($id);
+            elseif ($method == 'DELETE' && $id) $controller->deletar($id);
             break;
             
         default:

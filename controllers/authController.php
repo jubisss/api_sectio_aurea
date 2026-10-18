@@ -111,8 +111,58 @@ class AuthController {
         ];
         file_put_contents($tempFile, json_encode($codes));
         
+        // Envio do código por e-mail via EmailService (Gmail SMTP)
+        $assunto = "Sectio Aurea - Código de Recuperação de Senha";
+        $mensagem = "<h2>Recuperação de Senha - Sectio Aurea</h2>";
+        $mensagem .= "<p>Você solicitou a redefinição de sua senha de acesso.</p>";
+        $mensagem .= "<p>Seu código de verificação é: <strong style='font-size: 24px; color: #ff5f00;'>$code</strong></p>";
+        $mensagem .= "<p>Este código expira em 1 hora.</p>";
+        $mensagem .= "<br><p>Se você não solicitou esta alteração, por favor ignore esta mensagem.</p>";
+
+        EmailService::enviar($data->email, $assunto, $mensagem);
+        
         echo json_encode([
-            "message" => "Código de recuperação gerado com sucesso",
+            "message" => "Código de recuperação enviado com sucesso",
+            "code" => $code
+        ]);
+    }
+    
+    public function enviarCodigoCadastro() {
+        $data = json_decode(file_get_contents("php://input"));
+        if(empty($data->email)) {
+            http_response_code(400);
+            echo json_encode(["message" => "E-mail é obrigatório"]);
+            return;
+        }
+
+        if($this->usuario->emailExiste($data->email)) {
+            http_response_code(400);
+            echo json_encode(["message" => "Este e-mail já está cadastrado"]);
+            return;
+        }
+
+        $code = rand(100000, 999999);
+        $tempFile = sys_get_temp_dir() . '/signup_codes.json';
+        $codes = [];
+        if(file_exists($tempFile)) {
+            $codes = json_decode(file_get_contents($tempFile), true) ?? [];
+        }
+        $codes[$data->email] = [
+            "code" => $code,
+            "expires" => time() + 1800 // 30 minutos
+        ];
+        file_put_contents($tempFile, json_encode($codes));
+
+        $assunto = "Sectio Aurea - Código de Validação de Cadastro";
+        $mensagem = "<h2>Bem-vindo ao Sectio Aurea!</h2>";
+        $mensagem .= "<p>Para confirmar a criação da sua conta, utilize o código de verificação abaixo:</p>";
+        $mensagem .= "<p>Seu código é: <strong style='font-size: 24px; color: #ff5f00;'>$code</strong></p>";
+        $mensagem .= "<p>Este código expira em 30 minutos.</p>";
+
+        EmailService::enviar($data->email, $assunto, $mensagem);
+
+        echo json_encode([
+            "message" => "Código de validação enviado para o e-mail",
             "code" => $code
         ]);
     }
