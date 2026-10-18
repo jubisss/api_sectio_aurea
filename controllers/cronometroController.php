@@ -46,8 +46,8 @@ class CronometroController {
         
         $this->cronometro->id_usuario = $id_usuario;
         $this->cronometro->tempo_cronometro = $data->tempo_cronometro;
-        $this->cronometro->descricao = $data->descricao ?? null;
-        $this->cronometro->id_materia = $data->id_materia ?? null;
+        $this->cronometro->descricao = $data->descricao ?? '';
+        $this->cronometro->id_materia = (!empty($data->id_materia) && is_numeric($data->id_materia)) ? (int)$data->id_materia : null;
         $this->cronometro->created_at = $data->created_at ?? date('Y-m-d H:i:s');
         
         if($this->cronometro->create()) {

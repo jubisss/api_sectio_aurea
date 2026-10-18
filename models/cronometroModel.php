@@ -45,12 +45,16 @@ class Cronometro {
         
         $stmt = $this->conn->prepare($query);
         
-        $this->descricao = htmlspecialchars(strip_tags($this->descricao));
+        $this->descricao = htmlspecialchars(strip_tags($this->descricao ?? ''));
         
         $stmt->bindParam(":id_usuario", $this->id_usuario);
         $stmt->bindParam(":tempo_cronometro", $this->tempo_cronometro);
         $stmt->bindParam(":descricao", $this->descricao);
-        $stmt->bindParam(":id_materia", $this->id_materia);
+        if(empty($this->id_materia)) {
+            $stmt->bindValue(":id_materia", null, PDO::PARAM_NULL);
+        } else {
+            $stmt->bindValue(":id_materia", (int)$this->id_materia, PDO::PARAM_INT);
+        }
         $stmt->bindParam(":created_at", $this->created_at);
         
         if($stmt->execute()) {

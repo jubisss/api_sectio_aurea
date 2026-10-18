@@ -17,6 +17,7 @@ class Database {
             );
             $this->conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
             $this->conn->exec("SET session lock_wait_timeout = 5;");
+            $this->conn->exec("SET time_zone = '-03:00';");
         } catch (PDOException $e) {
             die(json_encode(["erro" => "Falha na conexão: " . $e->getMessage()]));
         }
