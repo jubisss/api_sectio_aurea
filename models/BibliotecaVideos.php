@@ -12,6 +12,8 @@ class BibliotecaVideos {
     public $thumbnail;
     public $tema;
     public $anotacoes;
+    public $audio_url;
+    public $audio_duracao;
     public $assistido;
     public $nota;
     public $data_adicionado;
@@ -34,8 +36,8 @@ class BibliotecaVideos {
         }
         
         $query = "INSERT INTO " . $this->table . " 
-                  (id_usuario, materia, titulo, url, video_id, thumbnail, tema, anotacoes, assistido, nota, data_adicionado) 
-                  VALUES (:id_usuario, :materia, :titulo, :url, :video_id, :thumbnail, :tema, :anotacoes, :assistido, :nota, :data_adicionado)";
+                  (id_usuario, materia, titulo, url, video_id, thumbnail, tema, anotacoes, audio_url, audio_duracao, assistido, nota, data_adicionado) 
+                  VALUES (:id_usuario, :materia, :titulo, :url, :video_id, :thumbnail, :tema, :anotacoes, :audio_url, :audio_duracao, :assistido, :nota, :data_adicionado)";
         
         $stmt = $this->conn->prepare($query);
         
@@ -46,6 +48,7 @@ class BibliotecaVideos {
         $this->thumbnail = htmlspecialchars(strip_tags($this->thumbnail));
         $this->tema = htmlspecialchars(strip_tags($this->tema));
         $this->data_adicionado = $this->data_adicionado ?? date('Y-m-d H:i:s');
+        $this->audio_duracao = $this->audio_duracao ?? '00:00';
         
         $stmt->bindParam(":id_usuario", $this->id_usuario);
         $stmt->bindParam(":materia", $this->materia);
@@ -55,6 +58,8 @@ class BibliotecaVideos {
         $stmt->bindParam(":thumbnail", $this->thumbnail);
         $stmt->bindParam(":tema", $this->tema);
         $stmt->bindParam(":anotacoes", $this->anotacoes);
+        $stmt->bindParam(":audio_url", $this->audio_url);
+        $stmt->bindParam(":audio_duracao", $this->audio_duracao);
         $stmt->bindParam(":assistido", $this->assistido);
         $stmt->bindParam(":nota", $this->nota);
         $stmt->bindParam(":data_adicionado", $this->data_adicionado);
@@ -90,6 +95,8 @@ class BibliotecaVideos {
             $this->thumbnail = $row['thumbnail'];
             $this->tema = $row['tema'];
             $this->anotacoes = $row['anotacoes'];
+            $this->audio_url = $row['audio_url'];
+            $this->audio_duracao = $row['audio_duracao'];
             $this->assistido = $row['assistido'];
             $this->nota = $row['nota'];
             $this->data_adicionado = $row['data_adicionado'];
@@ -102,6 +109,7 @@ class BibliotecaVideos {
         $query = "UPDATE " . $this->table . " 
                   SET materia = :materia, titulo = :titulo, url = :url, video_id = :video_id, 
                       thumbnail = :thumbnail, tema = :tema, anotacoes = :anotacoes, 
+                      audio_url = :audio_url, audio_duracao = :audio_duracao,
                       assistido = :assistido, nota = :nota 
                   WHERE id_video = :id AND id_usuario = :id_usuario";
         
@@ -121,6 +129,8 @@ class BibliotecaVideos {
         $stmt->bindParam(":thumbnail", $this->thumbnail);
         $stmt->bindParam(":tema", $this->tema);
         $stmt->bindParam(":anotacoes", $this->anotacoes);
+        $stmt->bindParam(":audio_url", $this->audio_url);
+        $stmt->bindParam(":audio_duracao", $this->audio_duracao);
         $stmt->bindParam(":assistido", $this->assistido);
         $stmt->bindParam(":nota", $this->nota);
         $stmt->bindParam(":id", $this->id_video);

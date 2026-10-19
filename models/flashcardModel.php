@@ -24,7 +24,7 @@ class Flash {
     
     private function materiaExiste($id_materia, $id_usuario) {
         $query = "SELECT id_materia FROM PI_Materia 
-                  WHERE id_materia = :id_materia AND id_usuario = :id_usuario AND ativo = 1";
+                  WHERE id_materia = :id_materia AND (id_usuario = :id_usuario OR id_usuario IS NULL) AND ativo = 1";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":id_materia", $id_materia);
         $stmt->bindParam(":id_usuario", $id_usuario);
@@ -64,19 +64,35 @@ class Flash {
     }
     
     public function read($id_usuario) {
-        $query = "SELECT f.*, m.nome as nome_materia 
+        $query = "SELECT f.*, m.nome as nome_materia, m.cor as cor_materia 
                   FROM " . $this->table . " f
-                  JOIN PI_Materia m ON f.id_materia = m.id_materia
-                  WHERE f.id_usuario = :id_usuario";
+                  LEFT JOIN PI_Materia m ON f.id_materia = m.id_materia
+                  WHERE f.id_usuario = :id_usuario
+                  ORDER BY f.id_flash DESC";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":id_usuario", $id_usuario);
         $stmt->execute();
         return $stmt;
     }
+
+    public function readOne() {
+        $query = "SELECT f.*, m.nome as nome_materia, m.cor as cor_materia 
+                  FROM " . $this->table . " f
+                  LEFT JOIN PI_Materia m ON f.id_materia = m.id_materia
+                  WHERE f.id_flash = :id AND f.id_usuario = :id_usuario";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(":id", $this->id_flash);
+        $stmt->bindParam(":id_usuario", $this->id_usuario);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
     
     public function readByMateria($id_usuario, $id_materia) {
-        $query = "SELECT * FROM " . $this->table . " 
-                  WHERE id_usuario = :id_usuario AND id_materia = :id_materia";
+        $query = "SELECT f.*, m.nome as nome_materia, m.cor as cor_materia 
+                  FROM " . $this->table . " f
+                  LEFT JOIN PI_Materia m ON f.id_materia = m.id_materia
+                  WHERE f.id_usuario = :id_usuario AND f.id_materia = :id_materia
+                  ORDER BY f.id_flash DESC";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":id_usuario", $id_usuario);
         $stmt->bindParam(":id_materia", $id_materia);

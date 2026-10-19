@@ -1,4 +1,7 @@
 <?php
+// Timezone padrão do Brasil
+date_default_timezone_set('America/Sao_Paulo');
+
 // Ativa erros para a gente ver o que tá acontecendo
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
@@ -16,8 +19,24 @@ require_once 'models/inteligenciasModel.php';
 require_once 'models/tarefasModel.php';
 require_once 'models/adminModel.php';
 require_once 'models/cornellModel.php';
+require_once 'models/mnemonicaModel.php';
+require_once 'models/MapaMental.php';
+require_once 'models/DiagramaFluxo.php';
+require_once 'models/Feynman.php';
+require_once 'models/gruposEstudoModel.php';
+require_once 'models/leituraModel.php';
+require_once 'models/simuladoModel.php';
+require_once 'models/BibliotecaVideos.php';
 
 require_once 'controllers/cornellController.php';
+require_once 'controllers/mnemonicaController.php';
+require_once 'controllers/mapaMentalController.php';
+require_once 'controllers/diagramaFluxoController.php';
+require_once 'controllers/feynmanController.php';
+require_once 'controllers/gruposEstudoController.php';
+require_once 'controllers/leituraController.php';
+require_once 'controllers/simuladoController.php';
+require_once 'controllers/BibliotecaVideosController.php';
 require_once 'controllers/authController.php';
 require_once 'controllers/usuarioController.php';
 require_once 'controllers/materiaController.php';
@@ -132,6 +151,12 @@ if ($endpoint == 'materias') {
     if ($method == 'POST') $controller->criar();
     exit();
 }
+if (preg_match('/^materias\/(\d+)$/', $endpoint, $matches) && in_array($method, ['PUT', 'DELETE'])) {
+    $controller = new MateriaController($db, $id_usuario_logado);
+    if ($method == 'PUT') $controller->atualizar($matches[1]);
+    if ($method == 'DELETE') $controller->deletar($matches[1]);
+    exit();
+}
 
 
 if ($endpoint == 'cronogramas') {
@@ -170,6 +195,205 @@ if ($endpoint == 'cornell') {
 if (preg_match('/^cornell\/(\d+)$/', $endpoint, $matches) && $method == 'DELETE') {
     $controller = new CornellController($db, $id_usuario_logado);
     $controller->deletar($matches[1]);
+    exit();
+}
+
+
+// Rota de Cronômetros (para o Relógio de Estudos)
+if ($endpoint == 'cronometros') {
+    $controller = new CronometroController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->listar();
+    if ($method == 'POST') $controller->criar();
+    exit();
+}
+if (preg_match('/^cronometros\/(\d+)$/', $endpoint, $matches) && in_array($method, ['PUT', 'DELETE'])) {
+    $controller = new CronometroController($db, $id_usuario_logado);
+    if ($method == 'PUT') $controller->atualizar($matches[1]);
+    if ($method == 'DELETE') $controller->deletar($matches[1]);
+    exit();
+}
+
+// Rota de Flashcards
+if ($endpoint == 'flashcards') {
+    $controller = new FlashController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->listar();
+    if ($method == 'POST') $controller->criar();
+    exit();
+}
+if (preg_match('/^flashcards\/materia\/(\d+)$/', $endpoint, $matches) && $method == 'GET') {
+    $controller = new FlashController($db, $id_usuario_logado);
+    $controller->listarPorMateria($matches[1]);
+    exit();
+}
+if (preg_match('/^flashcards\/(\d+)$/', $endpoint, $matches) && in_array($method, ['GET', 'PUT', 'DELETE'])) {
+    $controller = new FlashController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->buscar($matches[1]);
+    if ($method == 'PUT') $controller->atualizar($matches[1]);
+    if ($method == 'DELETE') $controller->deletar($matches[1]);
+    exit();
+}
+
+// Rota de Mnemônicas (Sequências e Listas Ordenadas)
+if ($endpoint == 'mnemonicas') {
+    $controller = new MnemonicaController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->listar();
+    if ($method == 'POST') $controller->criar();
+    exit();
+}
+if (preg_match('/^mnemonicas\/(\d+)$/', $endpoint, $matches)) {
+    $controller = new MnemonicaController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->buscar($matches[1]);
+    if ($method == 'PUT') $controller->atualizar($matches[1]);
+    if ($method == 'DELETE') $controller->deletar($matches[1]);
+    exit();
+}
+
+// Rota de Mapas Mentais
+if ($endpoint == 'mapasmentais') {
+    $controller = new MapaMentalController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->listar();
+    if ($method == 'POST') $controller->criar();
+    exit();
+}
+if (preg_match('/^mapasmentais\/(\d+)$/', $endpoint, $matches)) {
+    $controller = new MapaMentalController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->buscar($matches[1]);
+    if ($method == 'PUT') $controller->atualizar($matches[1]);
+    if ($method == 'DELETE') $controller->deletar($matches[1]);
+    exit();
+}
+
+// Rota de Diagramas de Fluxo (Fluxogramas)
+if ($endpoint == 'diagramasfluxo') {
+    $controller = new DiagramaFluxoController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->listar();
+    if ($method == 'POST') $controller->criar();
+    exit();
+}
+if (preg_match('/^diagramasfluxo\/(\d+)$/', $endpoint, $matches)) {
+    $controller = new DiagramaFluxoController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->buscar($matches[1]);
+    if ($method == 'PUT') $controller->atualizar($matches[1]);
+    if ($method == 'DELETE') $controller->deletar($matches[1]);
+    exit();
+}
+
+// Rota de Técnica Feynman
+if ($endpoint == 'feynman') {
+    $controller = new FeynmanController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->listar();
+    if ($method == 'POST') $controller->criar();
+    exit();
+}
+if (preg_match('/^feynman\/(\d+)$/', $endpoint, $matches)) {
+    $controller = new FeynmanController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->buscar($matches[1]);
+    if ($method == 'PUT') $controller->atualizar($matches[1]);
+    if ($method == 'DELETE') $controller->deletar($matches[1]);
+    exit();
+}
+
+// Rota de Podcasts
+if ($endpoint == 'podcasts') {
+    $controller = new FeynmanController($db, $id_usuario_logado, 'podcast');
+    if ($method == 'GET') $controller->listar();
+    if ($method == 'POST') $controller->criar();
+    exit();
+}
+if (preg_match('/^podcasts\/(\d+)$/', $endpoint, $matches)) {
+    $controller = new FeynmanController($db, $id_usuario_logado, 'podcast');
+    if ($method == 'GET') $controller->buscar($matches[1]);
+    if ($method == 'PUT') $controller->atualizar($matches[1]);
+    if ($method == 'DELETE') $controller->deletar($matches[1]);
+    exit();
+}
+
+// Rota de Eventos (Calendário)
+if ($endpoint == 'eventos') {
+    $controller = new EventoController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->listar();
+    if ($method == 'POST') $controller->criar();
+    exit();
+}
+if (preg_match('/^eventos\/(\d+)$/', $endpoint, $matches)) {
+    $controller = new EventoController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->buscar($matches[1]);
+    if ($method == 'PUT') $controller->atualizar($matches[1]);
+    if ($method == 'DELETE') $controller->deletar($matches[1]);
+    exit();
+}
+
+// Rota de Grupos de Estudo
+if ($endpoint == 'gruposestudo') {
+    $controller = new GrupoEstudoController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->listar();
+    if ($method == 'POST') $controller->criar();
+    exit();
+}
+if (preg_match('/^gruposestudo\/([a-zA-Z0-9]+)$/', $endpoint, $matches)) {
+    $controller = new GrupoEstudoController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->buscar($matches[1]);
+    if ($method == 'PUT') $controller->atualizar($matches[1]);
+    if ($method == 'DELETE') $controller->deletar($matches[1]);
+    exit();
+}
+
+// Rota de Histórico de Leituras (Leitura Savoring)
+if ($endpoint == 'historicoleituras' || $endpoint == 'leituras') {
+    $controller = new LeituraController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->listar();
+    if ($method == 'POST') $controller->criar();
+    exit();
+}
+if (preg_match('/^(?:historicoleituras|leituras)\/(\d+)$/', $endpoint, $matches)) {
+    $controller = new LeituraController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->buscar($matches[1]);
+    if ($method == 'PUT') $controller->atualizar($matches[1]);
+    if ($method == 'DELETE') $controller->deletar($matches[1]);
+    exit();
+}
+
+// Rota de Upload de Arquivos para Simulados/Provas
+if ($endpoint == 'simulados/upload' && $method == 'POST') {
+    $controller = new SimuladoController($db, $id_usuario_logado);
+    $controller->upload();
+    exit();
+}
+
+// Rota de Simulados / Testes Práticos (Provas Anteriores)
+if ($endpoint == 'simulados') {
+    $controller = new SimuladoController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->listar();
+    if ($method == 'POST') $controller->criar();
+    exit();
+}
+if (preg_match('/^simulados\/(\d+)$/', $endpoint, $matches)) {
+    $controller = new SimuladoController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->buscar($matches[1]);
+    if ($method == 'PUT') $controller->atualizar($matches[1]);
+    if ($method == 'DELETE') $controller->deletar($matches[1]);
+    exit();
+}
+
+// Rota de Upload de Áudio de Resumo dos Vídeos
+if (($endpoint == 'videos/audio' || $endpoint == 'bibliotecavideos/audio') && $method == 'POST') {
+    $controller = new BibliotecaVideosController($db, $id_usuario_logado);
+    $controller->uploadAudio();
+    exit();
+}
+
+// Rota de Estudo com Vídeos Educativos (Biblioteca de Vídeos)
+if ($endpoint == 'videos' || $endpoint == 'bibliotecavideos') {
+    $controller = new BibliotecaVideosController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->listar();
+    if ($method == 'POST') $controller->criar();
+    exit();
+}
+if (preg_match('/^(?:videos|bibliotecavideos)\/(\d+)$/', $endpoint, $matches)) {
+    $controller = new BibliotecaVideosController($db, $id_usuario_logado);
+    if ($method == 'GET') $controller->buscar($matches[1]);
+    if ($method == 'PUT') $controller->atualizar($matches[1]);
+    if ($method == 'DELETE') $controller->deletar($matches[1]);
     exit();
 }
 

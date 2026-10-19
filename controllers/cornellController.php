@@ -44,6 +44,7 @@ class CornellController {
         }
         
         $this->cornell->id_usuario = $id_usuario;
+        $this->cornell->id_materia = !empty($data->id_materia) ? (int)$data->id_materia : null;
         $this->cornell->titulo = $data->titulo ?? 'Cornell';
         $this->cornell->pergunta = $data->pergunta;
         $this->cornell->resposta = $data->resposta;

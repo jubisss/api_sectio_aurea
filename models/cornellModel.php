@@ -5,6 +5,7 @@ class Cornell {
     
     public $id_cornell;
     public $id_usuario;
+    public $id_materia;
     public $titulo;
     public $pergunta;
     public $resposta;
@@ -16,7 +17,11 @@ class Cornell {
     }
     
     public function read($id_usuario) {
-        $query = "SELECT * FROM " . $this->table . " WHERE id_usuario = :id_usuario ORDER BY data_criacao DESC";
+        $query = "SELECT c.*, m.nome as nome_materia, m.cor as cor_materia 
+                  FROM " . $this->table . " c 
+                  LEFT JOIN PI_Materia m ON c.id_materia = m.id_materia 
+                  WHERE c.id_usuario = :id_usuario 
+                  ORDER BY c.data_criacao DESC";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":id_usuario", $id_usuario);
         $stmt->execute();
@@ -24,11 +29,16 @@ class Cornell {
     }
     
     public function create() {
-        $query = "INSERT INTO " . $this->table . " (id_usuario, titulo, pergunta, resposta, resumo) 
-                  VALUES (:id_usuario, :titulo, :pergunta, :resposta, :resumo)";
+        $query = "INSERT INTO " . $this->table . " (id_usuario, id_materia, titulo, pergunta, resposta, resumo) 
+                  VALUES (:id_usuario, :id_materia, :titulo, :pergunta, :resposta, :resumo)";
         $stmt = $this->conn->prepare($query);
         
         $stmt->bindParam(":id_usuario", $this->id_usuario);
+        if(empty($this->id_materia)) {
+            $stmt->bindValue(":id_materia", null, PDO::PARAM_NULL);
+        } else {
+            $stmt->bindValue(":id_materia", (int)$this->id_materia, PDO::PARAM_INT);
+        }
         $stmt->bindParam(":titulo", $this->titulo);
         $stmt->bindParam(":pergunta", $this->pergunta);
         $stmt->bindParam(":resposta", $this->resposta);

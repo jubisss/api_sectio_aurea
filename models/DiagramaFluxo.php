@@ -5,6 +5,7 @@ class DiagramaFluxo {
     
     public $id_diagrama;
     public $id_usuario;
+    public $id_materia;
     public $titulo;
     public $data;
     public $nos;
@@ -27,15 +28,28 @@ class DiagramaFluxo {
             return false;
         }
         
-        $query = "INSERT INTO " . $this->table . " (id_usuario, titulo, data, nos, conexoes) 
-                  VALUES (:id_usuario, :titulo, :data, :nos, :conexoes)";
+        $query = "INSERT INTO " . $this->table . " (id_usuario, id_materia, titulo, data, nos, conexoes) 
+                  VALUES (:id_usuario, :id_materia, :titulo, :data, :nos, :conexoes)";
         
         $stmt = $this->conn->prepare($query);
         
         $this->titulo = htmlspecialchars(strip_tags($this->titulo));
         $this->data = $this->data ?? date('Y-m-d H:i:s');
         
+        if (is_array($this->nos) || is_object($this->nos)) {
+            $this->nos = json_encode($this->nos, JSON_UNESCAPED_UNICODE);
+        }
+        if (is_array($this->conexoes) || is_object($this->conexoes)) {
+            $this->conexoes = json_encode($this->conexoes, JSON_UNESCAPED_UNICODE);
+        }
+
         $stmt->bindParam(":id_usuario", $this->id_usuario);
+        if (!empty($this->id_materia)) {
+            $stmt->bindParam(":id_materia", $this->id_materia);
+        } else {
+            $nullMat = null;
+            $stmt->bindParam(":id_materia", $nullMat, PDO::PARAM_NULL);
+        }
         $stmt->bindParam(":titulo", $this->titulo);
         $stmt->bindParam(":data", $this->data);
         $stmt->bindParam(":nos", $this->nos);
@@ -49,7 +63,11 @@ class DiagramaFluxo {
     }
     
     public function read($id_usuario) {
-        $query = "SELECT * FROM " . $this->table . " WHERE id_usuario = :id_usuario ORDER BY data DESC";
+        $query = "SELECT d.*, mat.nome as nome_materia, mat.cor as cor_materia 
+                  FROM " . $this->table . " d
+                  LEFT JOIN PI_Materia mat ON d.id_materia = mat.id_materia
+                  WHERE d.id_usuario = :id_usuario 
+                  ORDER BY d.data DESC";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":id_usuario", $id_usuario);
         $stmt->execute();
@@ -57,33 +75,44 @@ class DiagramaFluxo {
     }
     
     public function readOne() {
-        $query = "SELECT * FROM " . $this->table . " WHERE id_diagrama = ? AND id_usuario = ?";
+        $query = "SELECT d.*, mat.nome as nome_materia, mat.cor as cor_materia 
+                  FROM " . $this->table . " d
+                  LEFT JOIN PI_Materia mat ON d.id_materia = mat.id_materia
+                  WHERE d.id_diagrama = :id AND d.id_usuario = :id_usuario";
         $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(1, $this->id_diagrama);
-        $stmt->bindParam(2, $this->id_usuario);
+        $stmt->bindParam(":id", $this->id_diagrama);
+        $stmt->bindParam(":id_usuario", $this->id_usuario);
         $stmt->execute();
-        
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if($row) {
-            $this->titulo = $row['titulo'];
-            $this->data = $row['data'];
-            $this->nos = $row['nos'];
-            $this->conexoes = $row['conexoes'];
-            return true;
-        }
-        return false;
+        return $stmt->fetch(PDO::FETCH_ASSOC);
     }
     
     public function update() {
         $query = "UPDATE " . $this->table . " 
-                  SET titulo = :titulo, data = :data, nos = :nos, conexoes = :conexoes 
+                  SET id_materia = :id_materia, 
+                      titulo = :titulo, 
+                      data = :data, 
+                      nos = :nos, 
+                      conexoes = :conexoes 
                   WHERE id_diagrama = :id AND id_usuario = :id_usuario";
         
         $stmt = $this->conn->prepare($query);
         
         $this->titulo = htmlspecialchars(strip_tags($this->titulo));
-        $this->data = $this->data ?? date('Y-m-d H:i:s');
+        $this->data = date('Y-m-d H:i:s');
         
+        if (is_array($this->nos) || is_object($this->nos)) {
+            $this->nos = json_encode($this->nos, JSON_UNESCAPED_UNICODE);
+        }
+        if (is_array($this->conexoes) || is_object($this->conexoes)) {
+            $this->conexoes = json_encode($this->conexoes, JSON_UNESCAPED_UNICODE);
+        }
+
+        if (!empty($this->id_materia)) {
+            $stmt->bindParam(":id_materia", $this->id_materia);
+        } else {
+            $nullMat = null;
+            $stmt->bindParam(":id_materia", $nullMat, PDO::PARAM_NULL);
+        }
         $stmt->bindParam(":titulo", $this->titulo);
         $stmt->bindParam(":data", $this->data);
         $stmt->bindParam(":nos", $this->nos);

@@ -65,7 +65,11 @@ class Cronometro {
     }
     
     public function read($id_usuario) {
-        $query = "SELECT * FROM " . $this->table . " WHERE id_usuario = :id_usuario ORDER BY created_at DESC";
+        $query = "SELECT c.*, m.nome as nome_materia, m.cor as cor_materia 
+                  FROM " . $this->table . " c 
+                  LEFT JOIN PI_Materia m ON c.id_materia = m.id_materia 
+                  WHERE c.id_usuario = :id_usuario 
+                  ORDER BY c.created_at DESC";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":id_usuario", $id_usuario);
         $stmt->execute();

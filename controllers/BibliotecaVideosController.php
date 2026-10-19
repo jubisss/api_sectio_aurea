@@ -33,6 +33,8 @@ class BibliotecaVideosController {
             
             // Aliases para camelCase do frontend
             $row['videoId'] = $row['video_id'];
+            $row['audioUrl'] = $row['audio_url'] ?? '';
+            $row['audioDuracao'] = $row['audio_duracao'] ?? '00:00';
             $row['dataAdicionado'] = $row['data_adicionado'];
             
             array_push($videos, $row);
@@ -58,6 +60,10 @@ class BibliotecaVideosController {
                 "thumbnail" => $this->video->thumbnail,
                 "tema" => $this->video->tema,
                 "anotacoes" => $this->video->anotacoes,
+                "audio_url" => $this->video->audio_url,
+                "audioUrl" => $this->video->audio_url,
+                "audio_duracao" => $this->video->audio_duracao,
+                "audioDuracao" => $this->video->audio_duracao,
                 "assistido" => (bool)$this->video->assistido,
                 "nota" => (int)$this->video->nota,
                 "data_adicionado" => $this->video->data_adicionado,
@@ -83,10 +89,12 @@ class BibliotecaVideosController {
         $this->video->materia = $data->materia ?? 'Geral';
         $this->video->titulo = $data->titulo;
         $this->video->url = $data->url;
-        $this->video->video_id = $data->videoId ?? '';
+        $this->video->video_id = $data->videoId ?? $data->video_id ?? '';
         $this->video->thumbnail = $data->thumbnail ?? '';
         $this->video->tema = $data->tema ?? 'Geral';
         $this->video->anotacoes = $data->anotacoes ?? '';
+        $this->video->audio_url = $data->audioUrl ?? $data->audio_url ?? null;
+        $this->video->audio_duracao = $data->audioDuracao ?? $data->audio_duracao ?? '00:00';
         $this->video->assistido = isset($data->assistido) ? (int)$data->assistido : 0;
         $this->video->nota = $data->nota ?? 0;
         
@@ -122,10 +130,12 @@ class BibliotecaVideosController {
         $this->video->materia = $data->materia ?? $this->video->materia;
         $this->video->titulo = $data->titulo ?? $this->video->titulo;
         $this->video->url = $data->url ?? $this->video->url;
-        $this->video->video_id = $data->videoId ?? $this->video->video_id;
+        $this->video->video_id = $data->videoId ?? $data->video_id ?? $this->video->video_id;
         $this->video->thumbnail = $data->thumbnail ?? $this->video->thumbnail;
         $this->video->tema = $data->tema ?? $this->video->tema;
         $this->video->anotacoes = $data->anotacoes ?? $this->video->anotacoes;
+        $this->video->audio_url = $data->audioUrl ?? $data->audio_url ?? $this->video->audio_url;
+        $this->video->audio_duracao = $data->audioDuracao ?? $data->audio_duracao ?? $this->video->audio_duracao;
         $this->video->assistido = isset($data->assistido) ? (int)$data->assistido : (int)$this->video->assistido;
         $this->video->nota = isset($data->nota) ? (int)$data->nota : (int)$this->video->nota;
         
@@ -134,6 +144,46 @@ class BibliotecaVideosController {
         } else {
             http_response_code(500);
             echo json_encode(["message" => "Erro ao atualizar vídeo."]);
+        }
+    }
+
+    public function uploadAudio() {
+        $this->getUserId();
+        if (!isset($_FILES['audio']) || $_FILES['audio']['error'] !== UPLOAD_ERR_OK) {
+            http_response_code(400);
+            echo json_encode(["message" => "Nenhum arquivo de áudio enviado ou erro no upload."]);
+            return;
+        }
+
+        $file = $_FILES['audio'];
+        $uploadDir = __DIR__ . '/../uploads/audio/';
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0777, true);
+        }
+
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if (empty($ext) || !in_array($ext, ['webm', 'mp3', 'wav', 'ogg', 'm4a', 'aac'])) {
+            $ext = 'webm';
+        }
+
+        $safeName = 'audio_' . time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
+        $destPath = $uploadDir . $safeName;
+
+        if (move_uploaded_file($file['tmp_name'], $destPath)) {
+            $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+            $host = $_SERVER['HTTP_HOST'];
+            $baseDir = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
+            $audioUrl = $protocol . $host . $baseDir . '/uploads/audio/' . $safeName;
+
+            echo json_encode([
+                "message" => "Áudio enviado com sucesso",
+                "audio_url" => $audioUrl,
+                "audioUrl" => $audioUrl,
+                "arquivo_nome" => $file['name']
+            ]);
+        } else {
+            http_response_code(500);
+            echo json_encode(["message" => "Falha ao salvar arquivo de áudio no servidor."]);
         }
     }
     

@@ -34,7 +34,7 @@ class AuthController {
                         "id" => $this->usuario->id_usuario,
                         "nome" => $this->usuario->nome,
                         "email" => $this->usuario->email,
-                        "plano" => $this->usuario->plano,
+                        "plano" => strtolower(trim($this->usuario->plano ?: 'gratuito')),
                         "tipo_dom" => $this->usuario->tipo_dom,
                         "clas_inteli" => json_decode($this->usuario->clas_inteli),
                         "cor_dominante" => $this->usuario->cor_dominante,
@@ -69,7 +69,7 @@ class AuthController {
         $this->usuario->nome = $data->nome;
         $this->usuario->email = $data->email;
         $this->usuario->senha = $data->senha;
-        $this->usuario->plano = $data->plano ?? 'Gratuito';
+        $this->usuario->plano = strtolower(trim($data->plano ?? 'gratuito'));
         $this->usuario->tipo_dom = $data->tipo_dom ?? null;
         $this->usuario->clas_inteli = json_encode($data->clas_inteli ?? []);
         

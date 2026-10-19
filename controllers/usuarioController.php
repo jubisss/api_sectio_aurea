@@ -51,7 +51,7 @@ class UsuarioController {
                 "id_usuario" => $this->usuario->id_usuario,
                 "nome" => $this->usuario->nome,
                 "email" => $this->usuario->email,
-                "plano" => $this->usuario->plano,
+                "plano" => strtolower(trim($this->usuario->plano ?: 'gratuito')),
                 "tipo_dom" => $this->usuario->tipo_dom,
                 "clas_inteli" => json_decode($this->usuario->clas_inteli),
                 "foto" => $this->usuario->foto,
@@ -78,7 +78,7 @@ class UsuarioController {
         // Bloqueia alteração de email - usa o que já está cadastrado
         $this->usuario->nome = $data->nome ?? $this->usuario->nome;
         $this->usuario->foto = $data->foto ?? $this->usuario->foto;
-        $this->usuario->plano = $data->plano ?? $this->usuario->plano;
+        $this->usuario->plano = isset($data->plano) ? strtolower(trim($data->plano)) : $this->usuario->plano;
         $this->usuario->tipo_dom = $data->tipo_dom ?? $this->usuario->tipo_dom;
         $this->usuario->clas_inteli = isset($data->clas_inteli) ? json_encode($data->clas_inteli) : $this->usuario->clas_inteli;
         

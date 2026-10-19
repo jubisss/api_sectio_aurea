@@ -31,8 +31,8 @@ class Evento {
         
         $stmt = $this->conn->prepare($query);
         
-        $this->tipo = htmlspecialchars(strip_tags($this->tipo));
-        $this->cor = htmlspecialchars(strip_tags($this->cor));
+        $this->tipo = strip_tags($this->tipo);
+        $this->cor = strip_tags($this->cor);
         
         $stmt->bindParam(":id_usuario", $this->id_usuario);
         $stmt->bindParam(":tipo", $this->tipo);
