@@ -62,10 +62,11 @@ class Cronograma {
     }
     
     public function read($id_usuario) {
-        $query = "SELECT c.*, m.nome as nome_materia 
+        $query = "SELECT c.*, m.nome as nome_materia, m.cor as cor_materia 
                   FROM " . $this->table . " c
                   JOIN PI_Materia m ON c.id_materia = m.id_materia
-                  WHERE c.id_usuario = :id_usuario";
+                  WHERE c.id_usuario = :id_usuario AND m.ativo = 1
+                  ORDER BY c.hora_inicio ASC";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":id_usuario", $id_usuario);
         $stmt->execute();

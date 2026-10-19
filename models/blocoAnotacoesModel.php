@@ -30,16 +30,19 @@ class Bloco {
         
         $stmt = $this->conn->prepare($query);
         
-        $this->conteudo = htmlspecialchars(strip_tags($this->conteudo));
-        $this->cor_nota = htmlspecialchars(strip_tags($this->cor_nota));
+        $this->cor_nota = htmlspecialchars(strip_tags($this->cor_nota ?? '#ffffff'));
         
         $stmt->bindParam(":conteudo", $this->conteudo);
         $stmt->bindParam(":id_usuario", $this->id_usuario);
         $stmt->bindParam(":cor_nota", $this->cor_nota);
         
-        if($stmt->execute()) {
-            $this->id_anotacao = $this->conn->lastInsertId();
-            return true;
+        try {
+            if($stmt->execute()) {
+                $this->id_anotacao = $this->conn->lastInsertId();
+                return true;
+            }
+        } catch (PDOException $e) {
+            return false;
         }
         return false;
     }

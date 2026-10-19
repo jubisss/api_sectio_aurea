@@ -56,15 +56,30 @@ class BlocoController {
         $id_usuario = $this->getUserId();
         $data = json_decode(file_get_contents("php://input"));
         
-        if(empty($data->conteudo)) {
+        if(!$data || (!isset($data->conteudo) && !isset($data->titulo) && !isset($data->texto))) {
             http_response_code(400);
             echo json_encode(["message" => "Conteúdo da anotação é obrigatório"]);
             return;
         }
         
-        $this->bloco->conteudo = $data->conteudo;
+        if (isset($data->conteudo)) {
+            $this->bloco->conteudo = is_string($data->conteudo)
+                ? $data->conteudo
+                : json_encode($data->conteudo, JSON_UNESCAPED_UNICODE);
+        } else {
+            $this->bloco->conteudo = json_encode([
+                "titulo" => $data->titulo ?? "Sem título",
+                "texto" => $data->texto ?? "",
+                "corTexto" => $data->corTexto ?? "#000000",
+                "checklist" => $data->checklist ?? [],
+                "favorito" => $data->favorito ?? false,
+                "dataCriacao" => $data->dataCriacao ?? date('d/m/Y, H:i:s'),
+                "anexos" => $data->anexos ?? []
+            ], JSON_UNESCAPED_UNICODE);
+        }
+
         $this->bloco->id_usuario = $id_usuario;
-        $this->bloco->cor_nota = $data->cor_nota ?? '#FFFF00';
+        $this->bloco->cor_nota = $data->cor_nota ?? '#ffffff';
         
         if($this->bloco->create()) {
             http_response_code(201);
