@@ -114,7 +114,7 @@ class SimuladoController {
             // URL acessível
             $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https" : "http";
             $host = $_SERVER['HTTP_HOST'];
-            $baseUrl = "$protocol://$host/api_sectio_aurea-main";
+            $baseUrl = "$protocol://$host/api_sectio_aurea";
             $arquivoUrl = "$baseUrl/uploads/simulados/$novoNome";
 
             echo json_encode([
