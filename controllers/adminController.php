@@ -38,6 +38,7 @@ class AdminController {
         $stmt = $this->admin->buscarEstatisticas();
         $dados = [];
         while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $row['total'] = (int)$row['total'];
             array_push($dados, $row);
         }
         echo json_encode(["sucesso" => true, "dados" => $dados]);
@@ -101,11 +102,14 @@ class AdminController {
             return;
         }
 
-        // Nota: Para foto em base64 via JSON, precisaríamos tratar no JS. 
-        // Como o fetch do JS manda JSON, vamos ignorar a foto por enquanto para simplificar.
-        // Se quiser com foto, teremos que mudar o front para usar FormData.
+        $fotoBuffer = null;
+        if (!empty($data->foto)) {
+            $partes = explode(',', $data->foto);
+            $base64 = end($partes);
+            $fotoBuffer = base64_decode($base64);
+        }
         
-        if ($this->admin->criarAdm($data->nome, $data->email, $data->senha, null)) {
+        if ($this->admin->criarAdm($data->nome, $data->email, $data->senha, $fotoBuffer)) {
             http_response_code(201);
             echo json_encode(["sucesso" => true, "message" => "Administrador cadastrado com sucesso!"]);
         } else {
@@ -123,7 +127,14 @@ class AdminController {
             return;
         }
 
-        if ($this->admin->atualizarAdm($data->email_antigo, $data->nome, $data->email, $data->senha, null)) {
+        $fotoBuffer = null;
+        if (!empty($data->foto)) {
+            $partes = explode(',', $data->foto);
+            $base64 = end($partes);
+            $fotoBuffer = base64_decode($base64);
+        }
+
+        if ($this->admin->atualizarAdm($data->email_antigo, $data->nome, $data->email, $data->senha, $fotoBuffer)) {
             echo json_encode(["sucesso" => true, "message" => "Perfil atualizado com sucesso!"]);
         } else {
             http_response_code(500);
@@ -149,7 +160,7 @@ class AdminController {
             echo json_encode([
                 "nome" => $adm['nome'],
                 "email" => $adm['email'],
-                "senha" => $adm['senha'], // Enviando a senha de volta para preencher o input (não é ideal, mas é o que o seu código fazia)
+                "senha" => $adm['senha'],
                 "foto" => $fotoBase64
             ]);
         } else {
@@ -159,23 +170,24 @@ class AdminController {
     }
 
     public function listarDuvidas() {
-    $stmt = $this->admin->listarDuvidas();
-    $dados = [];
-    while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-        array_push($dados, $row);
+        $stmt = $this->admin->listarDuvidas();
+        $dados = [];
+        while($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            array_push($dados, $row);
+        }
+        echo json_encode($dados);
     }
-    echo json_encode($dados);
-}
-public function responderDuvida($id, $resposta) {
-    echo json_encode(["message" => $this->admin->responderDuvida($id, $resposta) ? "Respondida" : "Erro"]);
-}
 
-public function reabrirDuvida($id) {
-    echo json_encode(["message" => $this->admin->reabrirDuvida($id) ? "Reaberta" : "Erro"]);
-}
+    public function responderDuvida($id, $resposta) {
+        echo json_encode(["message" => $this->admin->responderDuvida($id, $resposta) ? "Respondida" : "Erro"]);
+    }
 
-public function excluirDuvida($id) {
-    echo json_encode(["message" => $this->admin->excluirDuvida($id) ? "Excluída" : "Erro"]);
-}
+    public function reabrirDuvida($id) {
+        echo json_encode(["message" => $this->admin->reabrirDuvida($id) ? "Reaberta" : "Erro"]);
+    }
+
+    public function excluirDuvida($id) {
+        echo json_encode(["message" => $this->admin->excluirDuvida($id) ? "Excluída" : "Erro"]);
+    }
 }
 ?>
