@@ -387,6 +387,11 @@ if ($endpoint == 'gruposestudo') {
     if ($method == 'POST') $controller->criar();
     exit();
 }
+if ($endpoint == 'gruposestudo/entrar' && $method == 'POST') {
+    $controller = new GrupoEstudoController($db, $id_usuario_logado);
+    $controller->entrar();
+    exit();
+}
 if (preg_match('/^gruposestudo\/([a-zA-Z0-9]+)$/', $endpoint, $matches)) {
     $controller = new GrupoEstudoController($db, $id_usuario_logado);
     if ($method == 'GET') $controller->buscar($matches[1]);

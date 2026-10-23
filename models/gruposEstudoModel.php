@@ -63,7 +63,8 @@ class GrupoEstudo {
 
     public function readAllForUser($id_usuario, $email_usuario = null, $nome_usuario = null) {
         $query = "SELECT * FROM " . $this->table . " 
-                  WHERE id_usuario = :id_usuario ";
+                  WHERE id_usuario = :id_usuario 
+                  OR membros LIKE :id_str ";
         if (!empty($email_usuario)) {
             $query .= " OR membros LIKE :email ";
         }
@@ -74,6 +75,8 @@ class GrupoEstudo {
 
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":id_usuario", $id_usuario);
+        $idSearch = '%"id_usuario":' . (int)$id_usuario . '%';
+        $stmt->bindParam(":id_str", $idSearch);
         if (!empty($email_usuario)) {
             $emailSearch = "%" . $email_usuario . "%";
             $stmt->bindParam(":email", $emailSearch);
@@ -87,7 +90,7 @@ class GrupoEstudo {
     }
 
     public function findByCode($codigo) {
-        $query = "SELECT * FROM " . $this->table . " WHERE codigo = :codigo LIMIT 1";
+        $query = "SELECT * FROM " . $this->table . " WHERE UPPER(codigo) = UPPER(:codigo) LIMIT 1";
         $stmt = $this->conn->prepare($query);
         $stmt->bindParam(":codigo", $codigo);
         $stmt->execute();
